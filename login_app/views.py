@@ -1,7 +1,9 @@
 from django.shortcuts import render, redirect, HttpResponse
 from .models import User
+from balla_app.models import *
 import bcrypt
 from django.contrib import messages
+from balla_app.templates import *
 
 def index(request): 
     context = {
@@ -71,10 +73,12 @@ def welcome(request):
     if (not 'user_id' in request.session.keys()) or (request.session['user_id'] == ''):
         return redirect('/')
 
+    wall_messages = Message.objects.all()
     context = {
-        "user": User.objects.filter(id=request.session['user_id']).first()
+        "user": User.objects.filter(id=request.session['user_id']).first(),
+        "wall_messages": wall_messages,
     }
-    return render(request,'welcome.html', context)
+    return render(request,'balla.html', context)
 
 def logout(request):
     del request.session['user_id']

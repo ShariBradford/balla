@@ -9,18 +9,51 @@
     <link rel="stylesheet" href="{% static 'style.css' %}">
     <title>Balla</title>
 </head>
-<body>
+<body>   
     <div class="container">
-        <p class="float-right"><a href="/logout">Logout</a></p>
-        <h1>Success! Welcome, {{ user.first_name}}!</h1>
-        {% if messages %}
-            {% for message in messages %}
-            <p class="alert {% if message.tags == 'error' %}alert-danger{% else %}alert-{{ message.tags }}{% endif %} py-1 my-1" role="alert">
-                {{ message }}
-            </p>
-            {%  endfor %}
-        {% endif %}
+        <nav class="navbar">
+            <div>
+                <a class="navbar-brand" href="/">Balla</a>
+                <span class="navbar-text">The writing is on the wall.</span>
+            </div>
+            <div class="nav navbar-right">
+                <span class="nav-item navbar-text">Welcome, {{ user.first_name}}!</span>
+                <a href="/logout" class="nav-item nav-link">Logout</a>
+            </div>
+        </nav>
 
+        <div class="wall-content">
+            <form method="POST" action="/postmessage">
+                {% csrf_token %}
+                <fieldset>
+                    <legend>Post a message</legend>
+                </fieldset>
+
+                {% if messages%}
+                    {% for message in messages %}
+                    <p class="alert {% if message.tags == 'error' %}alert-danger{% else %}alert-{{ message.tags }}{% endif %} py-1 my-1" role="alert">
+                        {{ message }}
+                    </p>
+                    {%  endfor %}
+                {% endif %}
+
+                <div class="form-group">
+                    <textarea class="form-control" name="message" id="message"></textarea> 
+                </div>    
+    
+                <button type="submit" class="btn btn-primary mb-2 float-right">Post message</button>
+            </form>     
+            
+            <dl>
+            {% for wall_message in wall_messages %}
+                <dt>
+                    {{ wall_message.user.first_name }} {{ wall_message.user.last_name }}
+                    <span class="text-muted">{{ wall_message.created_at|date:"F j, Y" }}</span>
+                </dt>
+                <dd>{{ wall_message.message }}</dd>
+            {% endfor %}
+            </dl>
+        </div>
     </div>
 
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js" integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj" crossorigin="anonymous"></script>
