@@ -1,6 +1,6 @@
 from django.db import models
 import datetime
-import re
+import re, bcrypt
 
 # Create your models here.
 class UserManager(models.Manager):
@@ -26,7 +26,7 @@ class UserManager(models.Manager):
             years = today.year - birthday.year
             if today.month < birthday.month or (today.month == birthday.month and today.day < birthday.day):
                 years -= 1
-            print(f'Today: {today} | Birthday: {birthday} | Years: {years}')
+            #print(f'Today: {today} | Birthday: {birthday} | Years: {years}')
 
             if years < 13:
                 errors['birth_date'] = "You must be over 13 to register."
@@ -46,6 +46,29 @@ class UserManager(models.Manager):
             errors['password'] = "Passwords do not match."
 
         return errors
+
+    def register(self,postData):
+        pw = postData["password"]
+        pw_hash = bcrypt.hashpw(
+            pw.encode(),
+            bcrypt.gensalt()
+        ).decode()
+
+        return self.create(
+            first_name=postData["first_name"], 
+            last_name=postData["last_name"], 
+            birth_date=postData["birth_date"],
+            email=postData["email"], 
+            password=pw_hash, 
+        )
+
+    def authenticate(self,email,password):
+        user = self.filter(email=email)
+        if not user:
+            return False
+
+        user_in_database = user.first()
+        return bcrypt.checkpw(password.encode(), user_in_database.password.encode())
 
 class User(models.Model):
     # id INT

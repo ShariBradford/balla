@@ -6,80 +6,36 @@ from django.contrib import messages
 from balla_app.templates import *
 
 def index(request): 
-    context = {
-        "form": request.GET.get('form','')
-    }
-    return render(request,'index.html',context)
+    return render(request,'index.html')
 
 def register(request):
-    #print(f"Method: {request.method}")
-    #if request.method == "GET":
-    #    redirect('/')
-    #else:
     print(request.POST)
 
     errors = User.objects.basic_validator(request.POST)
     if errors: 
         for k,v in errors.items():
-            messages.error(request,v)
-        return redirect("/?form=register")
+            messages.add_message(request,messages.ERROR,v, extra_tags='register')
+        return redirect("/")
         
     else:
-        pw = request.POST["password"]
-        pw_hash = bcrypt.hashpw(
-            pw.encode(),
-            bcrypt.gensalt()
-        ).decode()
-
-        user = User.objects.create(
-            first_name=request.POST["first_name"], 
-            last_name=request.POST["last_name"], 
-            email=request.POST["email"], 
-            password=pw_hash, 
-        )
+        user = User.objects.register(request.POST)
         request.session['user_id'] = user.id
         messages.success(request,"Successfully logged in!")
-        return redirect('/success')
+        return redirect('/posts')
 
 def login(request):
-    #if request.method != "POST":
-    #    redirect('/')
-        
-    print(request.POST)
+    if request.method != "POST":
+       redirect('/')
 
-    user = User.objects.filter(email=request.POST['email'])
-    if user:
-        logged_in_user = user.first()
-        if bcrypt.checkpw(
-            request.POST['password'].encode(),
-            logged_in_user.password.encode()):
-            request.session['user_id'] = logged_in_user.id
-            messages.success(request,"Successfully logged in!")
-            return redirect('/success')
-
-        else:
-            request.session['user_id'] = ''
-            messages.error(request,"Invalid email or password.")
-            return redirect("/?form=login")
-
+    if User.objects.authenticate(request.POST['email'],request.POST['password']):
+        user = User.objects.get(email=request.POST['email'])
+        request.session['user_id'] = user.id
+        return redirect('/posts')
     else:
-        request.session['user_id'] = ''
-        messages.error(request,"Invalid email or password.")
-        return redirect("/?form=login")
-
-def welcome(request):
-    #if request.method != 'POST':
-    #    return redirect('/')
-    if (not 'user_id' in request.session.keys()) or (request.session['user_id'] == ''):
-        return redirect('/')
-
-    wall_messages = Message.objects.all()
-    context = {
-        "user": User.objects.filter(id=request.session['user_id']).first(),
-        "wall_messages": wall_messages,
-    }
-    return render(request,'balla.html', context)
+        request.session.clear()
+        messages.error(request,"Invalid email or password.",extra_tags="login")
+        return redirect("/")
 
 def logout(request):
-    del request.session['user_id']
+    request.session.clear()
     return redirect('/')
